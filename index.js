@@ -19,12 +19,14 @@ var listItemNames;
 //     }
 //   };
 
-  getPriceHistoryByMarketName(url)
-  getAllMarketNames()
+  //getPriceHistoryByMarketName(url)
+  //getAllMarketNames()
 
 
+  getAllPriceCSVs();
 
-  function getPriceHistoryByMarketName(url){
+  
+  function getPriceHistoryByMarketName(url, name){
     https.get(url, {headers: {'Cookie': cookie}}, (response) => {
         let data = '';
       
@@ -36,7 +38,8 @@ var listItemNames;
           if (data) {
             try {
               const jsonData = JSON.parse(data);
-              console.log(jsonData['prices']);
+              //console.log(jsonData['prices']);
+              console.log(makeFilename(name))
               const date = new Date();
               const formattedDate = date.toISOString().slice(0, 10).replace(/-/g, '_');
     
@@ -44,7 +47,7 @@ var listItemNames;
     
               var csv = priceHistory.map(row => row.join(',')).join('\n');
     
-              fs.writeFileSync('price'+ ""/*Place for Name from Function*/ + formattedDate +'.csv', csv);
+              fs.writeFileSync(`${makeFilename(name)}${formattedDate}.csv`, csv);
     
             } catch (error) {
               console.error('Error parsing JSON:', error);
@@ -86,6 +89,46 @@ var listItemNames;
     });
   });
   }
+
+
+
+  function getAllPriceCSVs(){
+    https.get(`https://api.steamapis.com/market/items/730?api_key=${STEAMAPIS_API_KEY}`, {headers: {'Cookie': ""}}, (response) => {
+    let data = '';
+  
+    response.on('data', (chunk) => {
+      data += chunk;
+    });
+  
+    response.on('end', () => {
+      if (data) {
+        try {
+          const jsonData = JSON.parse(data);
+
+          ItemsData = jsonData['data'];
+     
+
+          const marketNames = ItemsData.map(item => item.market_name)
+          
+          console.log(typeof marketNames)
+          listItemNames = marketNames;
+          
+          
+          marketNames.forEach(marketName => {
+            const marketHashName = getHashFromName(marketName);
+            getPriceHistoryByMarketName(`https://steamcommunity.com/market/pricehistory/?appid=730&market_hash_name=${marketHashName}`, marketName);
+          });
+        
+
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+        }
+      } else {
+        console.error('Empty response received');
+      }
+    });
+  });
+  }
   
   function getNameFromHash(name){
     let text = name.replace(/%20/g, ' ');
@@ -96,6 +139,15 @@ var listItemNames;
   function getHashFromName(name){
     let text = name.replace(/ /g, "%20");
     text = text.replace(/\|/g, "%7C");
+    return text;
+  }
+
+  function makeFilename(name) {
+    getHashFromName(name);
+    let text = name.replace(/%20/g, ' ');
+    text = text.replace(/%7C/g, ' ');
+    text = text.replace(/\|/g, " ");
+    text = text.replace(/\|/g, " ");
     return text;
   }
 
