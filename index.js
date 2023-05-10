@@ -19,11 +19,10 @@ var listItemNames;
 //     }
 //   };
 
-  //getPriceHistoryByMarketName(url)
+  getPriceHistoryByMarketName(url, "Test")
   //getAllMarketNames()
 
-
-  getAllPriceCSVs();
+  //getAllPriceCSVs();
 
   
   function getPriceHistoryByMarketName(url, name){
@@ -42,10 +41,15 @@ var listItemNames;
               console.log(makeFilename(name))
               const date = new Date();
               const formattedDate = date.toISOString().slice(0, 10).replace(/-/g, '_');
-    
+
               var priceHistory = jsonData['prices'];
-    
-              var csv = priceHistory.map(row => row.join(',')).join('\n');
+              var csv = priceHistory.map(row => {
+                const date = row[0].split(' ')[1] + '_' + row[0].split(' ')[2] + '_' + row[0].split(' ')[3].split(':')[0];
+                console.log("Element 1: " + row[0].split(' ')[0] + ' Element 2: ' + row[0].split(' ')[1] + ' Element 3: '+ row[0].split(' ')[2] + "   " + row[0].split(' ')[3].split(':')[0]);
+                const timestamp = new Date(row[0].split(' ')[2], numMonth(row[0].split(' ')[0]), row[0].split(' ')[1], row[0].split(' ')[3].split(':')[0]).getTime();
+                return `${timestamp},${row[1]},${row[2]}`;                
+              }).join('\n');
+
     
               fs.writeFileSync(`${makeFilename(name)}${formattedDate}.csv`, csv);
     
@@ -151,3 +155,17 @@ var listItemNames;
     return text;
   }
 
+  function numMonth(monthAbbr) {
+    return (String(['Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'].indexOf(monthAbbr) + 1).padStart(2, '0'))
+  }
